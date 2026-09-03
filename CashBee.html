@@ -1,0 +1,33 @@
+<!doctype html><html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CashBee v3</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6fb;font-family:Arial;color:#172033}.app{max-width:460px;margin:auto;min-height:100vh;background:#fff}
+header{padding:23px;background:linear-gradient(135deg,#4b22d8,#7a52ff);color:#fff;border-radius:0 0 24px 24px}header b{font-size:26px}header small{display:block;margin-top:5px}
+main{padding-bottom:82px}.card{margin:16px;padding:18px;border:1px solid #e5e7ef;border-radius:20px}.hero{color:#fff;background:linear-gradient(135deg,#4b22d8,#7a52ff)}
+.amount{font-size:35px;font-weight:800;margin:9px 0 17px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px}.stat{background:#f7f5ff;padding:15px;border-radius:15px}.stat b{display:block;margin-top:6px;font-size:18px}
+input{width:100%;padding:14px;border:1px solid #dfe2ea;border-radius:12px;font-size:16px;margin:6px 0}.btn{width:100%;padding:14px;border:0;border-radius:13px;background:#5b2cff;color:#fff;font-size:16px;font-weight:700;margin-top:8px}
+.btn.alt{background:#eef0ff;color:#4b22d8}.note{font-size:12px;color:#6b7280;line-height:1.5}.tx{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid #eee}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(460px,100%);background:#fff;border-top:1px solid #eee;display:flex;justify-content:space-around;padding:9px}nav button{border:0;background:none;color:#667085;font-size:18px}nav span{display:block;font-size:10px}.on{color:#5b2cff!important;font-weight:800}
+#toast{position:fixed;bottom:75px;left:50%;transform:translateX(-50%);background:#172033;color:#fff;padding:11px 15px;border-radius:10px;display:none}
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#4b22d8,#7a52ff)}#login .box{background:white;border-radius:24px;padding:24px;width:90%;max-width:390px}
+</style></head><body>
+<div id="login"><div class="box"><h1>🐝 CashBee</h1><p>Customer Login</p><input id="lname" placeholder="Your name"><input id="lphone" inputmode="numeric" placeholder="Mobile number"><button class="btn" onclick="login()">Continue</button><p class="note">Demo login. OTP/authentication is not connected yet.</p></div></div>
+<div class="app" id="app" style="display:none"><header><b>🐝 CashBee</b><small>Deposit Karo, 10% Cashback Pao</small></header><main id="view"></main>
+<nav><button data-p="home">⌂<span>Home</span></button><button data-p="deposit">＋<span>Deposit</span></button><button data-p="history">↻<span>History</span></button><button data-p="wallet">₹<span>Wallet</span></button><button data-p="profile">◉<span>Profile</span></button></nav></div><div id="toast"></div>
+<script>
+const K="cashbee-v3";let db=JSON.parse(localStorage.getItem(K)||"null")||{name:"",phone:"",deposit:0,cashback:0,tx:[]};let page="home";
+const money=n=>"₹"+Number(n||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+function save(){localStorage.setItem(K,JSON.stringify(db))}
+function toast(x){let t=document.getElementById("toast");t.textContent=x;t.style.display="block";setTimeout(()=>t.style.display="none",2200)}
+function login(){let n=lname.value.trim(),p=lphone.value.trim();if(!n||p.length<10)return toast("Name aur valid mobile dalo");db.name=n;db.phone=p;save();document.getElementById("login").style.display="none";document.getElementById("app").style.display="block";render()}
+function render(){document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.p===page));let v=view;
+if(page==="home")v.innerHTML=`<section class="card hero"><small>Welcome, ${db.name||"Customer"}</small><div class="amount">${money(db.cashback)}</div><button class="btn" onclick="page='deposit';render()">Deposit & Earn 10%</button></section><div class="grid"><div class="stat">Total Deposit<b>${money(db.deposit)}</b></div><div class="stat">Cashback<b>${money(db.cashback)}</b></div></div><section class="card"><h3>CashBee Rewards</h3><p>Eligible deposits earn 10% promotional cashback.</p><p class="note">Staging/demo mode. Real payments and withdrawals are not connected.</p></section>`;
+if(page==="deposit")v.innerHTML=`<section class="card"><h2>Deposit</h2><input id="amt" type="number" min="100" placeholder="Minimum ₹100" oninput="calc.textContent=money(Math.min((+this.value||0)*.1,1000))"><p class="note">Cashback (maximum ₹1,000):</p><h2 id="calc">₹0</h2><button class="btn" onclick="deposit()">Simulate Payment</button><p class="note">Demo only — no real money is transferred.</p></section>`;
+if(page==="history")v.innerHTML=`<section class="card"><h2>Transaction History</h2>${db.tx.length?db.tx.map(x=>`<div class="tx"><span><b>${x.id}</b><br>Deposit ${money(x.amount)}<br><small>${x.date}</small></span><b>+${money(x.cashback)}</b></div>`).join(""):"<p class='note'>No transactions yet.</p>"}</section>`;
+if(page==="wallet")v.innerHTML=`<section class="card"><h2>Cashback Wallet</h2><div class="amount">${money(db.cashback)}</div><button class="btn" onclick="toast(db.cashback?'Demo withdrawal request created':'Wallet is empty')">Request Withdrawal</button><p class="note">Production payout will require secure eligibility checks and a compliant payout provider.</p></section>`;
+if(page==="profile")v.innerHTML=`<section class="card"><h2>Profile</h2><input id="name" value="${db.name}" placeholder="Name"><input id="phone" value="${db.phone}" placeholder="Mobile"><button class="btn" onclick="profileSave()">Save Profile</button><button class="btn alt" onclick="logout()">Logout</button></section>`}
+function deposit(){let n=+amt.value;if(n<100)return toast("Minimum deposit ₹100");let c=Math.min(n*.1,1000),id="CB-"+Date.now().toString().slice(-8);db.deposit+=n;db.cashback+=c;db.tx.unshift({id,amount:n,cashback:c,date:new Date().toLocaleString("en-IN")});save();toast("10% cashback added");page="history";render()}
+function profileSave(){db.name=name.value||"Customer";db.phone=phone.value;save();toast("Profile saved");render()}
+function logout(){localStorage.removeItem(K);location.reload()}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{page=b.dataset.p;render()});
+if(db.name&&db.phone){login.style.display="none";app.style.display="block";render()}
+</script></body></html>
